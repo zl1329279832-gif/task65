@@ -59,5 +59,10 @@ public class CangchuxinxiServiceImpl extends ServiceImpl<CangchuxinxiDao, Cangch
 		return baseMapper.selectView(wrapper);
 	}
 
+	@Override
+	public int deductStock(String shangpinbianhao, Integer num) {
+		return baseMapper.deductStock(shangpinbianhao, num);
+	}
+
 
 }

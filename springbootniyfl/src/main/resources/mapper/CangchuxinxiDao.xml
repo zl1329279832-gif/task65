@@ -15,6 +15,12 @@
         <result property="alllimittimes" column="alllimittimes"/>
     </resultMap>
 
+	<update id="deductStock">
+		UPDATE cangchuxinxi
+		SET alllimittimes = alllimittimes - #{num}
+		WHERE shangpinbianhao = #{shangpinbianhao} AND alllimittimes >= #{num}
+	</update>
+
 	<select id="selectListVO"
 		resultType="com.entity.vo.CangchuxinxiVO" >
 		SELECT * FROM cangchuxinxi  cangchuxinxi         

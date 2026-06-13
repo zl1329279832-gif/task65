@@ -59,5 +59,10 @@ public class ShangpinxinxiServiceImpl extends ServiceImpl<ShangpinxinxiDao, Shan
 		return baseMapper.selectView(wrapper);
 	}
 
+	@Override
+	public int deductStock(Long id, Integer num) {
+		return baseMapper.deductStock(id, num);
+	}
+
 
 }

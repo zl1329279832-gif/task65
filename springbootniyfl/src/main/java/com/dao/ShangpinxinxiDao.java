@@ -20,7 +20,9 @@ import com.entity.view.ShangpinxinxiView;
  * @date 2023-05-18 15:40:06
  */
 public interface ShangpinxinxiDao extends BaseMapper<ShangpinxinxiEntity> {
-	
+
+	int deductStock(@Param("id") Long id, @Param("num") Integer num);
+
 	List<ShangpinxinxiVO> selectListVO(@Param("ew") Wrapper<ShangpinxinxiEntity> wrapper);
 	
 	ShangpinxinxiVO selectVO(@Param("ew") Wrapper<ShangpinxinxiEntity> wrapper);

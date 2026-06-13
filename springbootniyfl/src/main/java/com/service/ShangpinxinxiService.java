@@ -31,7 +31,11 @@ public interface ShangpinxinxiService extends IService<ShangpinxinxiEntity> {
    	ShangpinxinxiView selectView(@Param("ew") Wrapper<ShangpinxinxiEntity> wrapper);
    	
    	PageUtils queryPage(Map<String, Object> params,Wrapper<ShangpinxinxiEntity> wrapper);
-   	
+
+	/**
+	 * 原子扣减库存，返回影响行数（0表示库存不足）
+	 */
+	int deductStock(Long id, Integer num);
+
 
 }
-

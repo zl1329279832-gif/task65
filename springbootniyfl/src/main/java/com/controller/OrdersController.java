@@ -154,13 +154,32 @@ public class OrdersController {
 
 
     /**
-     * 修改
+     * 修改（含订单状态跳转校验）
+     * 合法状态：待支付、已完成、已取消
+     * 合法跳转：待支付→已完成，待支付→已取消
      */
     @RequestMapping("/update")
     @Transactional
     public R update(@RequestBody OrdersEntity orders, HttpServletRequest request){
-        //ValidatorUtils.validateEntity(orders);
-        ordersService.updateById(orders);//全部更新
+        // 订单状态跳转校验
+        if(orders.getStatus() != null && orders.getId() != null) {
+            OrdersEntity existing = ordersService.selectById(orders.getId());
+            if(existing != null && existing.getStatus() != null) {
+                String oldStatus = existing.getStatus();
+                String newStatus = orders.getStatus();
+                if(!oldStatus.equals(newStatus)) {
+                    boolean valid = false;
+                    if("待支付".equals(oldStatus) && ("已完成".equals(newStatus) || "已取消".equals(newStatus))) {
+                        valid = true;
+                    }
+                    if(!valid) {
+                        return R.error("非法状态跳转：" + oldStatus + " → " + newStatus
+                            + "，允许的跳转：待支付→已完成、待支付→已取消");
+                    }
+                }
+            }
+        }
+        ordersService.updateById(orders);
         return R.ok();
     }
 
