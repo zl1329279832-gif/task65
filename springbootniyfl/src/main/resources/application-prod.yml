@@ -1,0 +1,29 @@
+# ========================================
+# prod 环境配置（CI / 生产环境，所有敏感值由环境变量注入）
+# ========================================
+
+server:
+    port: ${SERVER_PORT:8080}
+    servlet:
+        # 边缘节点可通过 SERVER_CONTEXT_PATH 覆盖，例如 /shop
+        context-path: ${SERVER_CONTEXT_PATH:/springbootniyfl}
+
+spring:
+    datasource:
+        url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME:springbootniyfl}?useUnicode=true&characterEncoding=utf-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8&connectTimeout=5000&socketTimeout=30000
+        username: ${DB_USERNAME}
+        password: ${DB_PASSWORD}
+
+# prod 环境 OCR 凭证必须配置，否则启动时 WARN，调用时抛异常
+baidu:
+    ocr:
+        app-id: ${BAIDU_OCR_APP_ID}
+        api-key: ${BAIDU_OCR_API_KEY}
+        secret-key: ${BAIDU_OCR_SECRET_KEY}
+        connect-timeout: ${BAIDU_OCR_CONNECT_TIMEOUT:5000}
+        socket-timeout: ${BAIDU_OCR_SOCKET_TIMEOUT:60000}
+
+logging:
+    level:
+        root: WARN
+        com: INFO

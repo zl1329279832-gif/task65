@@ -96,12 +96,49 @@ public class BaiduUtil {
         return null;
     }
 
-    //设置APPID/AK/SK
-    public static final String APP_ID = "29917330";
-    public static final String API_KEY = "yMnHy1guHZRzGhXB7BILdktB";
-    public static final String SECRET_KEY = "1oHG8X0yizyZmIwj3bZygG470b648iE1";
+    // APP_ID / API_KEY / SECRET_KEY 由 BaiduOcrConfig 从 application.yml 注入，禁止硬编码
+    public static String APP_ID  = "";
+    public static String API_KEY = "";
+    public static String SECRET_KEY = "";
 
-    private static AipOcr ocrClient = null;
+    /** 连接超时（毫秒），默认 5000，由 baidu.ocr.connect-timeout 配置 */
+    public static int CONNECT_TIMEOUT = 5000;
+    /** Socket 读取超时（毫秒），默认 60000，由 baidu.ocr.socket-timeout 配置 */
+    public static int SOCKET_TIMEOUT  = 60000;
+
+    private static volatile AipOcr ocrClient = null;
+
+    /**
+     * 由 BaiduOcrConfig 在 Spring 启动时调用，完成凭证和超时初始化。
+     * 重置 ocrClient 使下次调用使用新凭证。
+     */
+    public static synchronized void init(String appId, String apiKey, String secretKey,
+                                          int connectTimeout, int socketTimeout) {
+        APP_ID  = appId  != null ? appId  : "";
+        API_KEY = apiKey != null ? apiKey : "";
+        SECRET_KEY = secretKey != null ? secretKey : "";
+        CONNECT_TIMEOUT = connectTimeout;
+        SOCKET_TIMEOUT  = socketTimeout;
+        ocrClient = null; // 强制重建，使新凭证生效
+    }
+
+    private static AipOcr getOcrClient() {
+        if (ocrClient == null) {
+            synchronized (BaiduUtil.class) {
+                if (ocrClient == null) {
+                    if (APP_ID.isEmpty() || API_KEY.isEmpty() || SECRET_KEY.isEmpty()) {
+                        throw new IllegalStateException(
+                            "百度 OCR 凭证未配置！请在 application.yml 设置 baidu.ocr.app-id / api-key / secret-key，"
+                            + "或通过环境变量 BAIDU_OCR_APP_ID / BAIDU_OCR_API_KEY / BAIDU_OCR_SECRET_KEY 注入");
+                    }
+                    ocrClient = new AipOcr(APP_ID, API_KEY, SECRET_KEY);
+                    ocrClient.setConnectionTimeoutInMillis(CONNECT_TIMEOUT);
+                    ocrClient.setSocketTimeoutInMillis(SOCKET_TIMEOUT);
+                }
+            }
+        }
+        return ocrClient;
+    }
 
     /**
      * 识别图片上的文本内容，转成文字字符串返回
@@ -115,12 +152,7 @@ public class BaiduUtil {
             options.put("detect_language", "true"); //是否检测语言，默认不检测。
             options.put("probability", "false"); //是否返回识别结果中每一行的置信度
             //通用文字识别
-            if(ocrClient==null) {
-                ocrClient = new AipOcr(APP_ID, API_KEY, SECRET_KEY);
-                ocrClient.setConnectionTimeoutInMillis(5000);
-                ocrClient.setSocketTimeoutInMillis(60000);
-            }
-            JSONObject jsonObject = ocrClient.basicAccurateGeneral(imagePath, options);
+            JSONObject jsonObject = getOcrClient().basicAccurateGeneral(imagePath, options);
             String result = mergeString(jsonObject, isNewline);
             return result;
         }catch(Exception ex){
@@ -159,8 +191,10 @@ public class BaiduUtil {
     }
 
     public static JSONObject animalDetect(String imgPath) {
-        //初始化
+        //初始化（使用配置注入的凭证）
         AipImageClassify aic = new AipImageClassify(APP_ID, API_KEY, SECRET_KEY);
+        aic.setConnectionTimeoutInMillis(CONNECT_TIMEOUT);
+        aic.setSocketTimeoutInMillis(SOCKET_TIMEOUT);
         //返回JSON格式的数据
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("baike_num", "1");
@@ -170,8 +204,10 @@ public class BaiduUtil {
     }
 
     public static JSONObject dishDetect(String imgPath) {
-        //初始化
+        //初始化（使用配置注入的凭证）
         AipImageClassify aic = new AipImageClassify(APP_ID, API_KEY, SECRET_KEY);
+        aic.setConnectionTimeoutInMillis(CONNECT_TIMEOUT);
+        aic.setSocketTimeoutInMillis(SOCKET_TIMEOUT);
         //返回JSON格式的数据
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("baike_num", "1");
@@ -181,8 +217,10 @@ public class BaiduUtil {
     }
 
     public static JSONObject plantDetect(String imgPath) {
-        //初始化
+        //初始化（使用配置注入的凭证）
         AipImageClassify aic = new AipImageClassify(APP_ID, API_KEY, SECRET_KEY);
+        aic.setConnectionTimeoutInMillis(CONNECT_TIMEOUT);
+        aic.setSocketTimeoutInMillis(SOCKET_TIMEOUT);
         //返回JSON格式的数据
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("baike_num", "1");

@@ -1,0 +1,28 @@
+# Build output
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Maven wrapper
+!.mvn/wrapper/maven-wrapper.jar
+
+# Env files (secrets)
+.env
+.env.*
+!.env.example
+
+# Node modules (front-end dev)
+node_modules/

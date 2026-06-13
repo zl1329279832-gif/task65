@@ -1,0 +1,29 @@
+# ========================================
+# dev 环境配置（本地开发用，激活方式：--spring.profiles.active=dev 或默认）
+# ========================================
+
+server:
+    port: 8080
+    servlet:
+        context-path: /springbootniyfl
+
+spring:
+    datasource:
+        # 本地开发直接用 localhost，密码可在此覆盖（不提交真实密码）
+        url: jdbc:mysql://127.0.0.1:3306/springbootniyfl?useUnicode=true&characterEncoding=utf-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8
+        username: root
+        password: 123456
+
+# dev 环境 OCR 凭证留空，本地开发不强制配置
+baidu:
+    ocr:
+        app-id:
+        api-key:
+        secret-key:
+        connect-timeout: 5000
+        socket-timeout: 60000
+
+logging:
+    level:
+        root: INFO
+        com: DEBUG

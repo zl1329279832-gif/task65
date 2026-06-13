@@ -1,0 +1,15 @@
+# 排除非构建文件，加速 Docker context 传输
+src/
+.mvn/
+mvnw
+mvnw.cmd
+pom-war.xml
+.git/
+.gitignore
+*.md
+.idea/
+*.iml
+.DS_Store
+node_modules/
+target/test-classes/
+target/surefire-reports/

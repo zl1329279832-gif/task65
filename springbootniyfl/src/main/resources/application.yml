@@ -8,16 +8,14 @@ server:
 
 
 spring:
+    profiles:
+        active: dev
+
     datasource:
         driverClassName: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://127.0.0.1:3306/springbootniyfl?useUnicode=true&characterEncoding=utf-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8
-        username: root
-        password: 123456
-
-#        driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
-#        url: jdbc:sqlserver://127.0.0.1:1433;DatabaseName=springbootniyfl
-#        username: sa
-#        password: 123456
+        url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:springbootniyfl}?useUnicode=true&characterEncoding=utf-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8
+        username: ${DB_USERNAME:root}
+        password: ${DB_PASSWORD:123456}
 
     servlet:
       multipart:
@@ -25,6 +23,17 @@ spring:
         max-request-size: 300MB
     resources:
       static-locations: classpath:static/,file:static/
+
+# 百度 OCR 凭证 —— 通过环境变量注入，禁止明文写入代码
+baidu:
+    ocr:
+        app-id: ${BAIDU_OCR_APP_ID:}
+        api-key: ${BAIDU_OCR_API_KEY:}
+        secret-key: ${BAIDU_OCR_SECRET_KEY:}
+        # 连接超时（毫秒），边缘节点网络不稳定时建议调大
+        connect-timeout: ${BAIDU_OCR_CONNECT_TIMEOUT:5000}
+        # Socket 读取超时（毫秒），大图识别时建议调大
+        socket-timeout: ${BAIDU_OCR_SOCKET_TIMEOUT:60000}
 
 #mybatis
 mybatis-plus:
@@ -50,4 +59,4 @@ mybatis-plus:
     cache-enabled: false
     call-setters-on-nulls: true
     #springboot 项目mybatis plus 设置 jdbcTypeForNull (oracle数据库需配置JdbcType.NULL, 默认是Other)
-    jdbc-type-for-null: 'null' 
+    jdbc-type-for-null: 'null'

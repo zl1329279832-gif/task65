@@ -1,0 +1,125 @@
+# =====================================================
+# 无人智慧超市 CI/CD Pipeline
+# 分支策略: push/PR to master 触发
+# Profile: prod (全量测试 + 启动冒烟)
+# =====================================================
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [master, main]
+    tags: ['v*']
+  pull_request:
+    branches: [master, main]
+
+env:
+  JAVA_VERSION: '8'
+  ARTIFACT_NAME: springbootniyfl
+  DOCKER_IMAGE: ${{ github.repository_owner }}/springbootniyfl
+
+jobs:
+  # ========================= Build & Test =========================
+  build:
+    name: Build & Test (prod profile)
+    runs-on: ubuntu-latest
+
+    # MySQL 8.0 service 容器 —— 冒烟测试需要真实数据源
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_pwd
+          MYSQL_DATABASE: springbootniyfl
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven            # 自动缓存 ~/.m2/repository
+
+      - name: Build & run tests (prod profile)
+        working-directory: springbootniyfl
+        run: |
+          mvn -B -P prod clean package \
+            -Dspring.profiles.active=prod \
+            -Dspring.datasource.url="jdbc:mysql://127.0.0.1:3306/springbootniyfl?useUnicode=true&characterEncoding=utf-8&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true&useSSL=false" \
+            -Dspring.datasource.username=root \
+            -Dspring.datasource.password=ci_root_pwd \
+            -Dbaidu.ocr.app-id="${{ secrets.BAIDU_OCR_APP_ID }}" \
+            -Dbaidu.ocr.api-key="${{ secrets.BAIDU_OCR_API_KEY }}" \
+            -Dbaidu.ocr.secret-key="${{ secrets.BAIDU_OCR_SECRET_KEY }}"
+
+      - name: Upload build artifact (JAR)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}-jar
+          path: springbootniyfl/target/*.jar
+          retention-days: 14
+
+  # ========================= Docker Build & Push (可选) =========================
+  docker:
+    name: Docker Build & Push
+    needs: build
+    # 仅在推送 tag (v*) 或手动开启时构建镜像
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Build JAR for Docker (skip tests, already passed)
+        working-directory: springbootniyfl
+        run: mvn -B -P prod clean package -DskipTests
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        # 如需推送到私有 Registry (ACR / Harbor)，替换为对应登录命令
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        # 若无 DOCKERHUB_TOKEN 则跳过登录（不推送）
+        continue-on-error: true
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+
+      - name: Build & push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: springbootniyfl
+          push: ${{ secrets.DOCKERHUB_TOKEN != '' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
