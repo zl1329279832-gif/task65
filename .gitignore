@@ -1,0 +1,15 @@
+# Environment / secrets
+.env
+.env.*
+*.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Build
+target/
+*.jar
+!.mvn/wrapper/maven-wrapper.jar

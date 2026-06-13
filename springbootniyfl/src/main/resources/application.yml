@@ -26,6 +26,15 @@ spring:
     resources:
       static-locations: classpath:static/,file:static/
 
+# 百度 OCR / AI 配置（通过环境变量注入，禁止明文提交）
+baidu:
+  ocr:
+    app-id: ${BAIDU_OCR_APP_ID:}
+    api-key: ${BAIDU_OCR_API_KEY:}
+    secret-key: ${BAIDU_OCR_SECRET_KEY:}
+    connection-timeout: ${BAIDU_OCR_CONN_TIMEOUT:5000}
+    socket-timeout: ${BAIDU_OCR_SOCK_TIMEOUT:60000}
+
 #mybatis
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml

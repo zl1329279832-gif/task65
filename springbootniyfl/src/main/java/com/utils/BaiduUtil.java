@@ -10,16 +10,33 @@ import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aip.ocr.AipOcr;
 import com.baidu.aip.imageclassify.AipImageClassify;
 
 /**
-* 类说明 : 
+* 百度 AI 工具类（凭证通过 application.yml + 环境变量注入）
 */
-
+@Component
 public class BaiduUtil {
-	
+
+    @Value("${baidu.ocr.app-id:}")
+    private String appId;
+
+    @Value("${baidu.ocr.api-key:}")
+    private String apiKey;
+
+    @Value("${baidu.ocr.secret-key:}")
+    private String secretKey;
+
+    @Value("${baidu.ocr.connection-timeout:5000}")
+    private int connectionTimeout;
+
+    @Value("${baidu.ocr.socket-timeout:60000}")
+    private int socketTimeout;
+
     /**
      * 根据经纬度获得省市区信息
      * @param lon 纬度
@@ -96,18 +113,13 @@ public class BaiduUtil {
         return null;
     }
 
-    //设置APPID/AK/SK
-    public static final String APP_ID = "29917330";
-    public static final String API_KEY = "yMnHy1guHZRzGhXB7BILdktB";
-    public static final String SECRET_KEY = "1oHG8X0yizyZmIwj3bZygG470b648iE1";
-
-    private static AipOcr ocrClient = null;
+    private AipOcr ocrClient = null;
 
     /**
      * 识别图片上的文本内容，转成文字字符串返回
      * @param imagePath 图片文件的路径
      */
-    public static String generalString(String imagePath, boolean isNewline){
+    public String generalString(String imagePath, boolean isNewline){
         try{
             HashMap<String, String> options = new HashMap<String, String>();
             options.put("language_type", "CHN_ENG"); //CHN_ENG:中英文混合， ENG:英文
@@ -116,9 +128,9 @@ public class BaiduUtil {
             options.put("probability", "false"); //是否返回识别结果中每一行的置信度
             //通用文字识别
             if(ocrClient==null) {
-                ocrClient = new AipOcr(APP_ID, API_KEY, SECRET_KEY);
-                ocrClient.setConnectionTimeoutInMillis(5000);
-                ocrClient.setSocketTimeoutInMillis(60000);
+                ocrClient = new AipOcr(appId, apiKey, secretKey);
+                ocrClient.setConnectionTimeoutInMillis(connectionTimeout);
+                ocrClient.setSocketTimeoutInMillis(socketTimeout);
             }
             JSONObject jsonObject = ocrClient.basicAccurateGeneral(imagePath, options);
             String result = mergeString(jsonObject, isNewline);
@@ -158,9 +170,9 @@ public class BaiduUtil {
         return null;
     }
 
-    public static JSONObject animalDetect(String imgPath) {
+    public JSONObject animalDetect(String imgPath) {
         //初始化
-        AipImageClassify aic = new AipImageClassify(APP_ID, API_KEY, SECRET_KEY);
+        AipImageClassify aic = new AipImageClassify(appId, apiKey, secretKey);
         //返回JSON格式的数据
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("baike_num", "1");
@@ -169,9 +181,9 @@ public class BaiduUtil {
         return res;
     }
 
-    public static JSONObject dishDetect(String imgPath) {
+    public JSONObject dishDetect(String imgPath) {
         //初始化
-        AipImageClassify aic = new AipImageClassify(APP_ID, API_KEY, SECRET_KEY);
+        AipImageClassify aic = new AipImageClassify(appId, apiKey, secretKey);
         //返回JSON格式的数据
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("baike_num", "1");
@@ -180,9 +192,9 @@ public class BaiduUtil {
         return res;
     }
 
-    public static JSONObject plantDetect(String imgPath) {
+    public JSONObject plantDetect(String imgPath) {
         //初始化
-        AipImageClassify aic = new AipImageClassify(APP_ID, API_KEY, SECRET_KEY);
+        AipImageClassify aic = new AipImageClassify(appId, apiKey, secretKey);
         //返回JSON格式的数据
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("baike_num", "1");

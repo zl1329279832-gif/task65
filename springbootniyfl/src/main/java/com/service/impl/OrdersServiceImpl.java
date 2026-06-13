@@ -63,6 +63,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     }
 
     @Autowired
+    private BaiduUtil baiduUtil;
+
+    @Autowired
     private CartDao cartDao;
 
     @Autowired
@@ -330,7 +333,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         // 1. 调用百度OCR识别图片文字
         String recognizedText;
         try {
-            recognizedText = BaiduUtil.generalString(imagePath, false);
+            recognizedText = baiduUtil.generalString(imagePath, false);
         } catch (Exception e) {
             log.error("百度OCR识别异常", e);
             throw new EIException("图片识别服务异常，请稍后重试: " + e.getMessage(), 500);

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.dao.*;
 import com.entity.*;
 import com.service.impl.OrdersServiceImpl;
+import com.utils.BaiduUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,6 +52,9 @@ public class OrdersServiceTest {
 
     @Mock
     private YonghuDao yonghuDao;
+
+    @Mock
+    private BaiduUtil baiduUtil;
 
     // 测试数据
     private CartEntity cartItem;
@@ -403,14 +407,15 @@ public class OrdersServiceTest {
 
     @Test
     public void testRecognizeAndAddToCart_OcrFailure() {
-        // BaiduUtil.generalString 在不存在的路径上会返回 null
-        // 验证识别失败时会抛出明确异常（不静默）
+        // mock OCR 返回 null，模拟识别失败
+        when(baiduUtil.generalString(anyString(), anyBoolean())).thenReturn(null);
+
         EIException ex = assertThrows(EIException.class, () -> {
             ordersService.recognizeAndAddToCart(100L, "/nonexistent/path.jpg", 1);
         });
         // 应当给出明确的识别失败错误信息
         assertTrue(
-            ex.getMsg().contains("识别") || ex.getMsg().contains("异常"),
+            ex.getMsg().contains("识别"),
             "异常信息应当明确说明识别失败原因，实际: " + ex.getMsg()
         );
     }
