@@ -15,6 +15,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.utils.ValidatorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -42,18 +44,19 @@ import java.io.IOException;
 /**
  * 订单
  * 后端接口
- * @author 
- * @email 
+ * @author
+ * @email
  * @date 2023-05-18 15:40:06
  */
 @RestController
 @RequestMapping("/orders")
 public class OrdersController {
+
+    private static final Logger log = LoggerFactory.getLogger(OrdersController.class);
+
     @Autowired
     private OrdersService ordersService;
 
-
-    
 
 
     /**
@@ -71,13 +74,13 @@ public class OrdersController {
 
         return R.ok().put("data", page);
     }
-    
+
     /**
      * 前端列表
      */
 	@IgnoreAuth
     @RequestMapping("/list")
-    public R list(@RequestParam Map<String, Object> params,OrdersEntity orders, 
+    public R list(@RequestParam Map<String, Object> params,OrdersEntity orders,
 		HttpServletRequest request){
         EntityWrapper<OrdersEntity> ew = new EntityWrapper<OrdersEntity>();
 
@@ -91,7 +94,7 @@ public class OrdersController {
     @RequestMapping("/lists")
     public R list( OrdersEntity orders){
        	EntityWrapper<OrdersEntity> ew = new EntityWrapper<OrdersEntity>();
-      	ew.allEq(MPUtil.allEQMapPre( orders, "orders")); 
+      	ew.allEq(MPUtil.allEQMapPre( orders, "orders"));
         return R.ok().put("data", ordersService.selectListView(ew));
     }
 
@@ -101,11 +104,11 @@ public class OrdersController {
     @RequestMapping("/query")
     public R query(OrdersEntity orders){
         EntityWrapper< OrdersEntity> ew = new EntityWrapper< OrdersEntity>();
- 		ew.allEq(MPUtil.allEQMapPre( orders, "orders")); 
+ 		ew.allEq(MPUtil.allEQMapPre( orders, "orders"));
 		OrdersView ordersView =  ordersService.selectView(ew);
 		return R.ok("查询订单成功").put("data", ordersView);
     }
-	
+
     /**
      * 后端详情
      */
@@ -124,7 +127,7 @@ public class OrdersController {
         OrdersEntity orders = ordersService.selectById(id);
         return R.ok().put("data", orders);
     }
-    
+
 
 
 
@@ -139,7 +142,7 @@ public class OrdersController {
         ordersService.insert(orders);
         return R.ok();
     }
-    
+
     /**
      * 前端保存
      */
@@ -166,7 +169,6 @@ public class OrdersController {
 
 
 
-    
 
     /**
      * 删除
@@ -176,11 +178,50 @@ public class OrdersController {
         ordersService.deleteBatchIds(Arrays.asList(ids));
         return R.ok();
     }
-    
-	
 
 
 
+
+    // ========================= 订单状态流转（状态机校验） =========================
+
+    /**
+     * 订单状态变更接口
+     * 合法状态：待支付、已支付、已发货、已完成、已取消
+     * 合法跳转：
+     *   待支付 -> 已支付 / 已取消
+     *   已支付 -> 已发货 / 已完成
+     *   已发货 -> 已完成
+     * 其他跳转一律拒绝
+     *
+     * POST /orders/status/{id}
+     * 请求体: { "status": "已支付" }
+     */
+    @RequestMapping("/status/{id}")
+    @Transactional(rollbackFor = Exception.class)
+    public R updateStatus(@PathVariable("id") Long id,
+                          @RequestBody Map<String, String> params,
+                          HttpServletRequest request) {
+        String targetStatus = params.get("status");
+        if (StringUtils.isBlank(targetStatus)) {
+            return R.error("目标状态不能为空");
+        }
+
+        // 验证目标状态是否合法
+        List<String> validStatuses = Arrays.asList("待支付", "已支付", "已发货", "已完成", "已取消");
+        if (!validStatuses.contains(targetStatus)) {
+            return R.error("无效的状态值: " + targetStatus + "，合法状态为: " + validStatuses);
+        }
+
+        try {
+            ordersService.updateOrderStatus(id, targetStatus);
+            return R.ok("订单状态更新成功");
+        } catch (com.entity.EIException e) {
+            return R.error(e.getCode(), e.getMsg());
+        } catch (Exception e) {
+            log.error("订单状态更新异常", e);
+            return R.error("订单状态更新失败: " + e.getMessage());
+        }
+    }
 
 
 
@@ -302,7 +343,6 @@ public class OrdersController {
         }
         return R.ok().put("data", result);
     }
-
 
 
 

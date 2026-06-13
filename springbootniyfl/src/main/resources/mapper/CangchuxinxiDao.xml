@@ -17,27 +17,40 @@
 
 	<select id="selectListVO"
 		resultType="com.entity.vo.CangchuxinxiVO" >
-		SELECT * FROM cangchuxinxi  cangchuxinxi         
+		SELECT * FROM cangchuxinxi  cangchuxinxi
         <where> 1=1 ${ew.sqlSegment}</where>
 	</select>
-	
+
 	<select id="selectVO"
 		resultType="com.entity.vo.CangchuxinxiVO" >
-		SELECT  cangchuxinxi.* FROM cangchuxinxi  cangchuxinxi 	
+		SELECT  cangchuxinxi.* FROM cangchuxinxi  cangchuxinxi
  		<where> 1=1 ${ew.sqlSegment}</where>
 	</select>
 
     <select id="selectListView"
 		resultType="com.entity.view.CangchuxinxiView" >
 
-		SELECT  cangchuxinxi.* FROM cangchuxinxi  cangchuxinxi 	        
+		SELECT  cangchuxinxi.* FROM cangchuxinxi  cangchuxinxi
         <where> 1=1 ${ew.sqlSegment}</where>
 	</select>
-	
+
 	<select id="selectView"
 		resultType="com.entity.view.CangchuxinxiView" >
 		SELECT * FROM cangchuxinxi  cangchuxinxi <where> 1=1 ${ew.sqlSegment}</where>
 	</select>
-	
+
+	<!-- 原子扣减仓储上架数量，WHERE 条件保证不会超卖 -->
+	<update id="deductStock">
+		UPDATE cangchuxinxi
+		SET alllimittimes = alllimittimes - #{quantity}
+		WHERE shangpinbianhao = #{shangpinbianhao} AND alllimittimes >= #{quantity}
+	</update>
+
+	<!-- 恢复仓储上架数量（订单取消时调用） -->
+	<update id="restoreStock">
+		UPDATE cangchuxinxi
+		SET alllimittimes = alllimittimes + #{quantity}
+		WHERE shangpinbianhao = #{shangpinbianhao}
+	</update>
 
 </mapper>
